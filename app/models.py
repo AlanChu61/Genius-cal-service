@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -41,7 +41,7 @@ class ClassRecord(Base):
     teacher_id = Column(Integer, ForeignKey("teachers.id"))
     student_id = Column(Integer, ForeignKey("students.id"))
     subject = Column(String, index=True)
-    date = Column(Date, index=True)
+    date = Column(String, index=True)  # 将 date 字段更改为字符串类型
     hours = Column(Float, index=True)
     teacher = relationship("Teacher", back_populates="class_records")
     student = relationship("Student", back_populates="class_records")

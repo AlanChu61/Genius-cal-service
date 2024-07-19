@@ -1,11 +1,25 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from . import models, schemas, database
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
+
+# 配置 CORS
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_db():
@@ -36,29 +50,18 @@ def read_teachers(skip: int = 0, limit: int = 10, db: Session = Depends(get_db))
     return teachers
 
 
-@app.post("/teacher_subject_salaries/", response_model=schemas.TeacherSubjectSalary)
-def create_teacher_subject_salary(
-    salary: schemas.TeacherSubjectSalaryCreate, db: Session = Depends(get_db)
-):
-    db_salary = models.TeacherSubjectSalary(
-        teacher_id=salary.teacher_id,
-        subject=salary.subject,
-        salary_per_hour=salary.salary_per_hour,
-    )
-    db.add(db_salary)
-    db.commit()
-    db.refresh(db_salary)
-    return db_salary
+@app.get("/teachers/{teacher_id}", response_model=schemas.Teacher)
+def read_teacher(teacher_id: int, db: Session = Depends(get_db)):
+    teacher = db.query(models.Teacher).filter(models.Teacher.id == teacher_id).first()
+    if teacher is None:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    return teacher
 
 
-@app.get(
-    "/teacher_subject_salaries/", response_model=List[schemas.TeacherSubjectSalary]
-)
-def read_teacher_subject_salaries(
-    skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
-):
-    salaries = db.query(models.TeacherSubjectSalary).offset(skip).limit(limit).all()
-    return salaries
+@app.get("/students/", response_model=List[schemas.Student])
+def read_students(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    students = db.query(models.Student).offset(skip).limit(limit).all()
+    return students
 
 
 @app.post("/students/", response_model=schemas.Student)
@@ -75,10 +78,41 @@ def create_student(student: schemas.StudentCreate, db: Session = Depends(get_db)
     return db_student
 
 
-@app.get("/students/", response_model=List[schemas.Student])
-def read_students(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    students = db.query(models.Student).offset(skip).limit(limit).all()
-    return students
+@app.get("/students/{student_id}", response_model=schemas.Student)
+def read_student(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(models.Student).filter(models.Student.id == student_id).first()
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return student
+
+
+@app.get("/class_records/", response_model=List[schemas.ClassRecord])
+def read_class_records(
+    skip: int = 0,
+    limit: int = 10,
+    teacher_id: Optional[int] = None,
+    student_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    if teacher_id:
+        class_records = (
+            db.query(models.ClassRecord)
+            .filter(models.ClassRecord.teacher_id == teacher_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    elif student_id:
+        class_records = (
+            db.query(models.ClassRecord)
+            .filter(models.ClassRecord.student_id == student_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    else:
+        class_records = db.query(models.ClassRecord).offset(skip).limit(limit).all()
+    return class_records
 
 
 @app.post("/class_records/", response_model=schemas.ClassRecord)
@@ -95,18 +129,3 @@ def create_class_record(
     db.add(db_class_record)
     db.commit()
     db.refresh(db_class_record)
-    # 更新学生的剩余课时
-    student = (
-        db.query(models.Student)
-        .filter(models.Student.id == class_record.student_id)
-        .first()
-    )
-    student.remaining_hours -= class_record.hours
-    db.commit()
-    return db_class_record
-
-
-@app.get("/class_records/", response_model=List[schemas.ClassRecord])
-def read_class_records(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    class_records = db.query(models.ClassRecord).offset(skip).limit(limit).all()
-    return class_records

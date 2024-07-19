@@ -23,7 +23,7 @@ class ClassRecordBase(BaseModel):
     teacher_id: int
     student_id: int
     subject: str
-    date: str
+    date: str  # 将 date 字段更改为字符串类型
     hours: float
 
 

@@ -1,21 +1,20 @@
 import sys
 import os
-from datetime import date
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.database import engine
 from app.models import Base, Teacher, TeacherSubjectSalary, Student, ClassRecord
 
-# 创建数据库表
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
 
 def init_db():
     db = Session(bind=engine)
 
-    # 插入教师数据
+    # Insert teacher data
     teacher1 = Teacher(name="Alice", mode="online")
     teacher2 = Teacher(name="Bob", mode="offline")
 
@@ -23,7 +22,7 @@ def init_db():
     db.add(teacher2)
     db.commit()
 
-    # 插入教师科目薪水数据
+    # Insert teacher subject salary data
     salary1 = TeacherSubjectSalary(
         teacher_id=teacher1.id, subject="Math", salary_per_hour=50.0
     )
@@ -39,7 +38,7 @@ def init_db():
     db.add(salary3)
     db.commit()
 
-    # 插入学生数据
+    # Insert student data
     student1 = Student(
         name="Charlie", subject="Math", total_hours=100, remaining_hours=80
     )
@@ -51,26 +50,26 @@ def init_db():
     db.add(student2)
     db.commit()
 
-    # 插入课程记录数据
+    # Insert class record data
     class_record1 = ClassRecord(
         teacher_id=teacher1.id,
         student_id=student1.id,
         subject="Math",
-        date=date(2024, 7, 1),
+        date=datetime(2024, 7, 1),
         hours=2,
     )
     class_record2 = ClassRecord(
         teacher_id=teacher1.id,
         student_id=student2.id,
         subject="Physics",
-        date=date(2024, 7, 2),
+        date=datetime(2024, 7, 2),
         hours=1,
     )
     class_record3 = ClassRecord(
         teacher_id=teacher2.id,
         student_id=student1.id,
         subject="Math",
-        date=date(2024, 7, 3),
+        date=datetime(2024, 7, 3),
         hours=3,
     )
 
