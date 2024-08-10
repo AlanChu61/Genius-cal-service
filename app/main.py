@@ -2,10 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from . import models, schemas, database
+from . import models, schemas, database  # 改为相对导入
 
+# 创建数据库表
 models.Base.metadata.create_all(bind=database.engine)
 
+# 初始化 FastAPI 应用
 app = FastAPI()
 
 # 配置 CORS
@@ -129,3 +131,4 @@ def create_class_record(
     db.add(db_class_record)
     db.commit()
     db.refresh(db_class_record)
+    return db_class_record
