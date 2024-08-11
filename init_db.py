@@ -1,84 +1,81 @@
-import sys
-import os
-from datetime import datetime
+import sqlite3
 from sqlalchemy.orm import Session
-from app.database import engine
+from app.database import SessionLocal, engine
 from app.models import Base, Teacher, TeacherSubjectSalary, Student, ClassRecord
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Create database tables
+# 创建数据库表
 Base.metadata.create_all(bind=engine)
 
 
 def init_db():
-    db = Session(bind=engine)
+    # 连接到 data.db 文件
+    data_conn = sqlite3.connect("data.db")
+    data_cursor = data_conn.cursor()
 
-    # Insert teacher data
-    teacher1 = Teacher(name="Alice", mode="online")
-    teacher2 = Teacher(name="Bob", mode="offline")
+    # 创建当前数据库会话
+    db = SessionLocal()
 
-    db.add(teacher1)
-    db.add(teacher2)
-    db.commit()
+    try:
+        # 读取教师数据并插入到新的数据库中
+        data_cursor.execute("SELECT name, mode FROM teachers")
+        teachers = data_cursor.fetchall()
+        for name, mode in teachers:
+            teacher = Teacher(name=name, mode=mode)
+            db.add(teacher)
+        db.commit()
 
-    # Insert teacher subject salary data
-    salary1 = TeacherSubjectSalary(
-        teacher_id=teacher1.id, subject="Math", salary_per_hour=50.0
-    )
-    salary2 = TeacherSubjectSalary(
-        teacher_id=teacher1.id, subject="Physics", salary_per_hour=60.0
-    )
-    salary3 = TeacherSubjectSalary(
-        teacher_id=teacher2.id, subject="Math", salary_per_hour=55.0
-    )
+        # 获取所有教师以匹配 teacher_id
+        db_teachers = db.query(Teacher).all()
 
-    db.add(salary1)
-    db.add(salary2)
-    db.add(salary3)
-    db.commit()
+        # 读取教师课时费数据并插入到新的数据库中
+        data_cursor.execute(
+            "SELECT teacher_id, subject, salary_per_hour FROM teacher_subject_salaries"
+        )
+        salaries = data_cursor.fetchall()
+        for teacher_id, subject, salary_per_hour in salaries:
+            # 找到对应的 teacher
+            teacher = next(t for t in db_teachers if t.id == teacher_id)
+            salary = TeacherSubjectSalary(
+                teacher_id=teacher.id, subject=subject, salary_per_hour=salary_per_hour
+            )
+            db.add(salary)
+        db.commit()
 
-    # Insert student data
-    student1 = Student(
-        name="Charlie", subject="Math", total_hours=100, remaining_hours=80
-    )
-    student2 = Student(
-        name="Dave", subject="Physics", total_hours=100, remaining_hours=95
-    )
+        # 读取学生数据并插入到新的数据库中
+        data_cursor.execute(
+            "SELECT name, subject, total_hours, remaining_hours FROM students"
+        )
+        students = data_cursor.fetchall()
+        for name, subject, total_hours, remaining_hours in students:
+            student = Student(
+                name=name,
+                subject=subject,
+                total_hours=total_hours,
+                remaining_hours=remaining_hours,
+            )
+            db.add(student)
+        db.commit()
 
-    db.add(student1)
-    db.add(student2)
-    db.commit()
+        # 读取课程记录数据并插入到新的数据库中
+        data_cursor.execute(
+            "SELECT teacher_id, student_id, subject, date, hours FROM class_records"
+        )
+        class_records = data_cursor.fetchall()
+        for teacher_id, student_id, subject, date, hours in class_records:
+            class_record = ClassRecord(
+                teacher_id=teacher_id,
+                student_id=student_id,
+                subject=subject,
+                date=date,
+                hours=hours,
+            )
+            db.add(class_record)
+        db.commit()
 
-    # Insert class record data
-    class_record1 = ClassRecord(
-        teacher_id=teacher1.id,
-        student_id=student1.id,
-        subject="Math",
-        date=datetime(2024, 7, 1),
-        hours=2,
-    )
-    class_record2 = ClassRecord(
-        teacher_id=teacher1.id,
-        student_id=student2.id,
-        subject="Physics",
-        date=datetime(2024, 7, 2),
-        hours=1,
-    )
-    class_record3 = ClassRecord(
-        teacher_id=teacher2.id,
-        student_id=student1.id,
-        subject="Math",
-        date=datetime(2024, 7, 3),
-        hours=3,
-    )
-
-    db.add(class_record1)
-    db.add(class_record2)
-    db.add(class_record3)
-    db.commit()
-
-    db.close()
+    finally:
+        # 关闭数据库会话和 data.db 连接
+        db.close()
+        data_conn.close()
 
 
 if __name__ == "__main__":

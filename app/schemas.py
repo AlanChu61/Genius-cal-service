@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 
 
@@ -23,7 +23,7 @@ class ClassRecordBase(BaseModel):
     teacher_id: int
     student_id: int
     subject: str
-    date: str  # 将 date 字段更改为字符串类型
+    date: str
     hours: float
 
 
@@ -70,6 +70,17 @@ class Teacher(TeacherBase):
     id: int
     subjects: List[TeacherSubjectSalary] = []
     class_records: List[ClassRecord] = []
+
+    class Config:
+        orm_mode = True
+
+
+# 返回教师课时费详情，包括教师名、科目、学生名和课时费
+class TeacherRateDetail(BaseModel):
+    teacher_name: str
+    subject: str
+    student_name: str
+    salary_per_hour: float
 
     class Config:
         orm_mode = True

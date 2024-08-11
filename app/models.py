@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 
+# 教师表
 class Teacher(Base):
     __tablename__ = "teachers"
 
@@ -13,6 +14,7 @@ class Teacher(Base):
     class_records = relationship("ClassRecord", back_populates="teacher")
 
 
+# 教师课时费表
 class TeacherSubjectSalary(Base):
     __tablename__ = "teacher_subject_salaries"
 
@@ -23,6 +25,7 @@ class TeacherSubjectSalary(Base):
     teacher = relationship("Teacher", back_populates="subjects")
 
 
+# 学生表
 class Student(Base):
     __tablename__ = "students"
 
@@ -34,6 +37,7 @@ class Student(Base):
     class_records = relationship("ClassRecord", back_populates="student")
 
 
+# 课程记录表
 class ClassRecord(Base):
     __tablename__ = "class_records"
 
@@ -41,7 +45,7 @@ class ClassRecord(Base):
     teacher_id = Column(Integer, ForeignKey("teachers.id"))
     student_id = Column(Integer, ForeignKey("students.id"))
     subject = Column(String, index=True)
-    date = Column(String, index=True)  # 将 date 字段更改为字符串类型
+    date = Column(String, index=True)
     hours = Column(Float, index=True)
     teacher = relationship("Teacher", back_populates="class_records")
     student = relationship("Student", back_populates="class_records")
