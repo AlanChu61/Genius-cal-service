@@ -90,6 +90,8 @@ def read_students(skip: int = 0, limit: int = 10, db: Session = Depends(get_db))
 
 
 # 获取课程记录列表
+
+
 @app.get("/class_records/", response_model=List[schemas.ClassRecord])
 def read_class_records(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return db.query(models.ClassRecord).offset(skip).limit(limit).all()
